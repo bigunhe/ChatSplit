@@ -126,7 +126,7 @@ export default function ChatPage() {
       });
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
-    } catch (error) {
+    } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Please try again!' }]);
     } finally {
       setIsLoading(false);
