@@ -63,16 +63,17 @@ export default function DemoChat() {
     setAiLines([]);
     setAiLineIdx(0);
     let i = 0;
-    animationRef.current.user = setInterval(() => {
+    const animRef = animationRef.current;
+    animRef.user = setInterval(() => {
       setUserTyped(userFull.slice(0, i + 1));
       i++;
       if (i >= userFull.length) {
-        if (animationRef.current.user) clearInterval(animationRef.current.user);
+        if (animRef.user) clearInterval(animRef.user);
         setTimeout(() => setShowLoading(true), 500);
       }
     }, 18);
     return () => {
-      if (animationRef.current.user) clearInterval(animationRef.current.user);
+      if (animRef.user) clearInterval(animRef.user);
     };
   }, [isDemoRunning]);
 
@@ -102,7 +103,8 @@ export default function DemoChat() {
       setAiTyped(line.slice(0, j + 1));
       j++;
       if (j < line.length) {
-        animationRef.current.ai = setTimeout(typeLine, 8 + Math.random() * 12);
+        const animRef = animationRef.current;
+        animRef.ai = setTimeout(typeLine, 8 + Math.random() * 12);
       } else {
         setTimeout(() => {
           setAiLines((prev) => [...prev, line]);
@@ -112,8 +114,9 @@ export default function DemoChat() {
     }
     if (line.length > 0) typeLine();
     else setTimeout(() => setAiLineIdx((idx) => idx + 1), 120);
+    const animRef = animationRef.current;
     return () => {
-      if (animationRef.current.ai) clearTimeout(animationRef.current.ai);
+      if (animRef.ai) clearTimeout(animRef.ai);
     };
     // eslint-disable-next-line
   }, [aiLineIdx, aiLines, showLoading, isDemoRunning]);
@@ -133,7 +136,7 @@ export default function DemoChat() {
   }
 
   function renderAssistantMessage(content: string) {
-    let lines = content
+    const lines = content
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*]+)\*/g, '<em>$1</em>')
       .replace(/^\s*[-+*] /gm, '')

@@ -94,7 +94,7 @@ export default function LandingDraft() {
               <div className="text-3xl">📱</div>
               <div>
                 <h3 className="font-bold mb-2 text-blue-900">Works on Your Phone</h3>
-                <p className="text-gray-700">Add expenses immediately while you're out</p>
+                <p className="text-gray-700">Add expenses immediately while you&apos;re out</p>
               </div>
             </div>
           </div>
@@ -152,7 +152,7 @@ export default function LandingDraft() {
               Try ChatSplit Now - Free! 🚀
             </button>
           </Link>
-          <p className="text-sm mt-4 text-white/80">No signup required • Works on any device</p>
+          <p className="text-sm mt-4 text-white/80">No signup required &bull; Works on any device</p>
         </div>
       </div>
 

@@ -23,8 +23,8 @@ function smartParseExpenses(input: string) {
   // Normalize input
   const text = input.replace(/\n/g, '. ').replace(/\s+/g, ' ').toLowerCase();
   let totalBill: number | null = null;
-  let payments: Array<{ person: string, amount: number, forPeople?: string[], calculated?: boolean }> = [];
-  let peopleSet = new Set<string>();
+  const payments: Array<{ person: string, amount: number, forPeople?: string[], calculated?: boolean }> = [];
+  const peopleSet = new Set<string>();
   let restAmount: number | null = null;
 
   // 1. Find total bill
@@ -44,15 +44,15 @@ function smartParseExpenses(input: string) {
   let paidSum = 0;
   let restPayer = null;
   while ((match = paymentRegex.exec(text)) !== null) {
-    let person = match[1] === 'i' ? 'you' : match[1];
-    let amountRaw = match[2];
-    let forPeopleRaw = match[3];
-    let forPeople = forPeopleRaw ? forPeopleRaw.split(/and|,| /).map(s => s.trim()).filter(Boolean) : undefined;
+    const person = match[1] === 'i' ? 'you' : match[1];
+    const amountRaw = match[2];
+    const forPeopleRaw = match[3];
+    const forPeople = forPeopleRaw ? forPeopleRaw.split(/and|,| /).map(s => s.trim()).filter(Boolean) : undefined;
     if (amountRaw === 'the rest') {
       restPayer = { person, forPeople };
       continue;
     }
-    let amount = parseFloat(amountRaw.replace('$', ''));
+    const amount = parseFloat(amountRaw.replace('$', ''));
     if (!isNaN(amount)) {
       payments.push({ person, amount, forPeople });
       paidSum += amount;
@@ -63,7 +63,7 @@ function smartParseExpenses(input: string) {
 
   // 3. Handle 'paid the rest'
   if (restPayer && totalBill !== null) {
-    let rest = totalBill - paidSum;
+    const rest = totalBill - paidSum;
     payments.push({ person: restPayer.person, amount: rest, forPeople: restPayer.forPeople, calculated: true });
     peopleSet.add(restPayer.person);
     if (restPayer.forPeople) restPayer.forPeople.forEach(p => peopleSet.add(p));
@@ -75,7 +75,7 @@ function smartParseExpenses(input: string) {
   }
 
   // 5. Collect all people
-  let people = Array.from(peopleSet);
+  const people = Array.from(peopleSet);
   if (!people.includes('you') && /i paid/i.test(text)) people.push('you');
 
   return {
@@ -169,52 +169,53 @@ async function callOpenAIExpenseAPI(input: string) {
       throw new Error(err.error || 'API error');
     }
     return await response.json();
-  } catch (e: any) {
-    return { error: e.message || 'Unknown error' };
+  } catch (e: unknown) {
+    return { error: (e as Error).message || 'Unknown error' };
   }
 }
 
-function GeminiExpenseResult({ data }: { data: any }) {
-  if (data.error) {
-    return <span>😕 Sorry, I couldn't process that: <b>{data.error}</b></span>;
+function GeminiExpenseResult({ data }: { data: unknown }) {
+  const d = data as any;
+  if (d.error) {
+    return <span>😕 Sorry, I couldn&apos;t process that: <b>{d.error}</b></span>;
   }
-  if (!data.expenses || !data.people) {
-    return <span>🤔 I couldn't parse the expenses. Try a different message.</span>;
+  if (!d.expenses || !d.people) {
+    return <span>🤔 I couldn&apos;t parse the expenses. Try a different message.</span>;
   }
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <span className="text-green-600 text-lg">💰</span>
-        <span className="font-semibold">Total Expenses: <span className="text-blue-700">${data.totalAmount ?? 0}</span></span>
+        <span className="font-semibold">Total Expenses: <span className="text-blue-700">${d.totalAmount ?? 0}</span></span>
       </div>
       <div className="flex items-center gap-2">
         <span className="text-blue-700 text-lg">👥</span>
-        <span className="font-semibold">People: {data.people?.map((p: string) => p[0].toUpperCase() + p.slice(1)).join(', ')}</span>
+        <span className="font-semibold">People: {d.people?.map((p: string) => p[0].toUpperCase() + p.slice(1)).join(', ')}</span>
       </div>
       <div className="flex items-center gap-2">
         <span className="text-yellow-600 text-lg">💸</span>
-        <span className="font-semibold">Per Person Share: <span className="text-blue-900">${data.perPersonShare ?? '-'}</span></span>
+        <span className="font-semibold">Per Person Share: <span className="text-blue-900">${d.perPersonShare ?? '-'}</span></span>
       </div>
       <div className="flex items-center gap-2">
         <span className="text-indigo-700 text-lg">🧾</span>
         <span className="font-semibold">Expenses:</span>
       </div>
       <ul className="pl-6 list-disc text-left text-sm">
-        {data.expenses?.map((e: any, i: number) => (
+        {d.expenses?.map((e: any, i: number) => (
           <li key={i}>
             <b>{e.payer[0].toUpperCase() + e.payer.slice(1)}</b> paid <span className="text-blue-900">${e.amount}</span>
             {e.description && <> for <span className="text-green-700">{e.description}</span></>}
           </li>
         ))}
       </ul>
-      {data.settlements && data.settlements.length > 0 && (
+      {d.settlements && d.settlements.length > 0 && (
         <>
           <div className="flex items-center gap-2">
             <span className="text-indigo-700 text-lg">🤝</span>
             <span className="font-semibold">Settlements:</span>
           </div>
           <ul className="pl-6 list-disc text-left text-sm">
-            {data.settlements.map((s: any, i: number) => (
+            {d.settlements.map((s: any, i: number) => (
               <li key={i}><b>{s.from}</b> owes <b>{s.to}</b> <span className="text-blue-900">${s.amount}</span></li>
             ))}
           </ul>
