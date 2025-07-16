@@ -34,7 +34,7 @@ export default function LandingDraft() {
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
               <div className="text-4xl mb-4">🧮</div>
               <h3 className="font-bold mb-2 text-blue-900">Mental Math Hell</h3>
-              <p className="text-gray-700">"Who owes what?" becomes a 30-minute calculation</p>
+              <p className="text-gray-700">&quot;Who owes what?&quot; becomes a 30-minute calculation</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
               <div className="text-4xl mb-4">😤</div>

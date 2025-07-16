@@ -118,7 +118,6 @@ export default function DemoChat() {
     return () => {
       if (animRef.ai) clearTimeout(animRef.ai);
     };
-    // eslint-disable-next-line
   }, [aiLineIdx, aiLines, showLoading, isDemoRunning]);
 
   function handleStartDemo() {

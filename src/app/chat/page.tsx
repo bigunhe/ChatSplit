@@ -15,71 +15,7 @@ import Link from 'next/link';
 // Remove unused: function formatTime(ts: number) { ... }
 
 // --- Smarter Expense Parsing ---
-function smartParseExpenses(input: string) {
-  // Normalize input
-  const text = input.replace(/\n/g, '. ').replace(/\s+/g, ' ').toLowerCase();
-  let totalBill: number | null = null;
-  const payments: Array<{ person: string, amount: number, forPeople?: string[], calculated?: boolean }> = [];
-  const peopleSet = new Set<string>();
-  // Remove unused: const restAmount: number | null = null;
-
-  // 1. Find total bill
-  const totalBillMatch = text.match(/(total bill|bill total|total amount|all together|total is|total)\s*\$?(\d+(?:\.\d{1,2})?)/);
-  if (totalBillMatch) {
-    totalBill = parseFloat(totalBillMatch[2]);
-  } else {
-    // Try to find a single large number at the start
-    const firstNum = text.match(/^\s*\$?(\d{2,})(?:\s|\.|$)/);
-    if (firstNum) totalBill = parseFloat(firstNum[1]);
-  }
-
-  // 2. Find all explicit payments
-  // e.g. "i paid 120", "sam paid 250 for him and sarah", "tim paid the rest"
-  const paymentRegex = /(i|[a-zA-Z]+) paid (the rest|\$?\d+(?:\.\d{1,2})?)(?: for ([a-zA-Z, ]+))?/g;
-  let match;
-  let paidSum = 0;
-  let restPayer = null;
-  while ((match = paymentRegex.exec(text)) !== null) {
-    const person = match[1] === 'i' ? 'you' : match[1];
-    const amountRaw = match[2];
-    const forPeopleRaw = match[3];
-    const forPeople = forPeopleRaw ? forPeopleRaw.split(/and|,| /).map(s => s.trim()).filter(Boolean) : undefined;
-    if (amountRaw === 'the rest') {
-      restPayer = { person, forPeople };
-      continue;
-    }
-    const amount = parseFloat(amountRaw.replace('$', ''));
-    if (!isNaN(amount)) {
-      payments.push({ person, amount, forPeople });
-      paidSum += amount;
-      peopleSet.add(person);
-      if (forPeople) forPeople.forEach(p => peopleSet.add(p));
-    }
-  }
-
-  // 3. Handle 'paid the rest'
-  if (restPayer && totalBill !== null) {
-    const rest = totalBill - paidSum;
-    payments.push({ person: restPayer.person, amount: rest, forPeople: restPayer.forPeople, calculated: true });
-    peopleSet.add(restPayer.person);
-    if (restPayer.forPeople) restPayer.forPeople.forEach(p => peopleSet.add(p));
-  }
-
-  // 4. Fallback: if no totalBill, sum all payments
-  if (totalBill === null && payments.length > 0) {
-    totalBill = payments.reduce((sum, p) => sum + p.amount, 0);
-  }
-
-  // 5. Collect all people
-  const people = Array.from(peopleSet);
-  if (!people.includes('you') && /i paid/i.test(text)) people.push('you');
-
-  return {
-    totalBill,
-    payments,
-    people,
-  };
-}
+// Removed unused: function smartParseExpenses(input: string) { ... }
 
 // Remove unused: function AIResponse({ parsed, rawInput }: { parsed: ReturnType<typeof smartParseExpenses>, rawInput: string }) { ... }
 
