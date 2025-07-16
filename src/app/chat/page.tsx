@@ -1,0 +1,442 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+
+// --- Types ---
+type Message = {
+  from: 'user' | 'ai';
+  text: string;
+  timestamp: number;
+  aiElement?: React.ReactNode;
+};
+
+// --- Helpers ---
+function formatTime(ts: number) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// --- Smarter Expense Parsing ---
+function smartParseExpenses(input: string) {
+  // Normalize input
+  const text = input.replace(/\n/g, '. ').replace(/\s+/g, ' ').toLowerCase();
+  let totalBill: number | null = null;
+  let payments: Array<{ person: string, amount: number, forPeople?: string[], calculated?: boolean }> = [];
+  let peopleSet = new Set<string>();
+  let restAmount: number | null = null;
+
+  // 1. Find total bill
+  const totalBillMatch = text.match(/(total bill|bill total|total amount|all together|total is|total)\s*\$?(\d+(?:\.\d{1,2})?)/);
+  if (totalBillMatch) {
+    totalBill = parseFloat(totalBillMatch[2]);
+  } else {
+    // Try to find a single large number at the start
+    const firstNum = text.match(/^\s*\$?(\d{2,})(?:\s|\.|$)/);
+    if (firstNum) totalBill = parseFloat(firstNum[1]);
+  }
+
+  // 2. Find all explicit payments
+  // e.g. "i paid 120", "sam paid 250 for him and sarah", "tim paid the rest"
+  const paymentRegex = /(i|[a-zA-Z]+) paid (the rest|\$?\d+(?:\.\d{1,2})?)(?: for ([a-zA-Z, ]+))?/g;
+  let match;
+  let paidSum = 0;
+  let restPayer = null;
+  while ((match = paymentRegex.exec(text)) !== null) {
+    let person = match[1] === 'i' ? 'you' : match[1];
+    let amountRaw = match[2];
+    let forPeopleRaw = match[3];
+    let forPeople = forPeopleRaw ? forPeopleRaw.split(/and|,| /).map(s => s.trim()).filter(Boolean) : undefined;
+    if (amountRaw === 'the rest') {
+      restPayer = { person, forPeople };
+      continue;
+    }
+    let amount = parseFloat(amountRaw.replace('$', ''));
+    if (!isNaN(amount)) {
+      payments.push({ person, amount, forPeople });
+      paidSum += amount;
+      peopleSet.add(person);
+      if (forPeople) forPeople.forEach(p => peopleSet.add(p));
+    }
+  }
+
+  // 3. Handle 'paid the rest'
+  if (restPayer && totalBill !== null) {
+    let rest = totalBill - paidSum;
+    payments.push({ person: restPayer.person, amount: rest, forPeople: restPayer.forPeople, calculated: true });
+    peopleSet.add(restPayer.person);
+    if (restPayer.forPeople) restPayer.forPeople.forEach(p => peopleSet.add(p));
+  }
+
+  // 4. Fallback: if no totalBill, sum all payments
+  if (totalBill === null && payments.length > 0) {
+    totalBill = payments.reduce((sum, p) => sum + p.amount, 0);
+  }
+
+  // 5. Collect all people
+  let people = Array.from(peopleSet);
+  if (!people.includes('you') && /i paid/i.test(text)) people.push('you');
+
+  return {
+    totalBill,
+    payments,
+    people,
+  };
+}
+
+function AIResponse({ parsed, rawInput }: { parsed: ReturnType<typeof smartParseExpenses>, rawInput: string }) {
+  if (!parsed.totalBill || parsed.payments.length === 0) {
+    // fallback to old logic or friendly error
+    return <span>🤔 I couldn't quite figure out the group split from: <b>{rawInput}</b>. Try something like "540 total bill for lunch. I paid 120. Sam paid 250 for him and Sarah. Tim paid the rest."</span>;
+  }
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="text-green-600 text-lg">🍽️</span>
+        <span className="font-semibold">Total bill: <span className="text-blue-700">${parsed.totalBill}</span></span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-blue-700 text-lg">💸</span>
+        <span className="font-semibold">Payments:</span>
+      </div>
+      <ul className="pl-6 list-disc text-left text-sm">
+        {parsed.payments.map((p, i) => (
+          <li key={i}>
+            <b>{p.person[0].toUpperCase() + p.person.slice(1)}</b> paid <span className="text-blue-900">${p.amount}</span>
+            {p.forPeople && p.forPeople.length > 0 && (
+              <> for <span className="text-green-700">{p.forPeople.join(', ')}</span></>
+            )}
+            {p.calculated && <span className="text-xs text-gray-500"> (calculated as the rest)</span>}
+          </li>
+        ))}
+      </ul>
+      <div className="flex items-center gap-2">
+        <span className="text-indigo-700 text-lg">👥</span>
+        <span><b>People involved:</b> {parsed.people.map(p => p[0].toUpperCase() + p.slice(1)).join(', ')}</span>
+      </div>
+      <div className="text-sm text-gray-500 pt-2">Let me know if you want to see who owes whom, or add more details!</div>
+    </div>
+  );
+}
+
+// --- Enhanced AI & Parsing ---
+const GREETINGS = [
+  /hello/i, /hi\b/i, /hey/i, /how are you/i, /good morning/i, /good evening/i, /what's up/i
+];
+const COMPLAINTS = [/hate.*app/i, /stupid|dumb|useless/i, /bad app/i];
+const CONFUSION = [/what.*do/i, /how.*work/i, /help/i, /not.*work/i, /confused/i];
+const NONSENSE = [/^[a-z]{2,}$/i, /asdf|qwer|zxcv|jjj|lorem|test/i];
+const THANKS = [/thank/i, /thanks/i, /appreciate/i];
+const EXAMPLES = [
+  "coffee $8, paid dinner $45 for me and Sarah, got $20 from Mike",
+  "lunch $12, groceries $30, Mike paid $25 for gas",
+  "Sarah owes me $15 for lunch, got $20 back from John"
+];
+
+function isLikelyExpense(input: string) {
+  // Looks for $ or numbers with expense/income keywords
+  return /\$?\d+/.test(input) && /(paid|spent|got|received|owe|from|for|withdrew)/i.test(input);
+}
+
+function isPartialExpense(input: string) {
+  // Has a keyword but missing amount or description
+  if (/coffee|lunch|dinner|groceries|gas|starbucks|pizza|rent|bill/i.test(input) && !/\$?\d+/.test(input)) return 'missing_amount';
+  if (/paid|spent|got|received|owe|from|withdrew/i.test(input) && /\$?\d+/.test(input) && !/coffee|lunch|dinner|groceries|gas|starbucks|pizza|rent|bill/i.test(input)) return 'missing_desc';
+  if (/owe/i.test(input) && !/\$?\d+/.test(input)) return 'missing_amount';
+  return false;
+}
+
+function isQuestion(input: string) {
+  return /\?$/.test(input) || /how|what|why|when|can you|could you|do you/i.test(input);
+}
+
+function getRandom(arr: string[]) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Remove old parseUserInput and smartParseExpenses logic
+// Add new function to call OpenAI API route
+async function callOpenAIExpenseAPI(input: string) {
+  try {
+    const response = await fetch('/api/parse-expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input })
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'API error');
+    }
+    return await response.json();
+  } catch (e: any) {
+    return { error: e.message || 'Unknown error' };
+  }
+}
+
+function GeminiExpenseResult({ data }: { data: any }) {
+  if (data.error) {
+    return <span>😕 Sorry, I couldn't process that: <b>{data.error}</b></span>;
+  }
+  if (!data.expenses || !data.people) {
+    return <span>🤔 I couldn't parse the expenses. Try a different message.</span>;
+  }
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="text-green-600 text-lg">💰</span>
+        <span className="font-semibold">Total Expenses: <span className="text-blue-700">${data.totalAmount ?? 0}</span></span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-blue-700 text-lg">👥</span>
+        <span className="font-semibold">People: {data.people?.map((p: string) => p[0].toUpperCase() + p.slice(1)).join(', ')}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-yellow-600 text-lg">💸</span>
+        <span className="font-semibold">Per Person Share: <span className="text-blue-900">${data.perPersonShare ?? '-'}</span></span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-indigo-700 text-lg">🧾</span>
+        <span className="font-semibold">Expenses:</span>
+      </div>
+      <ul className="pl-6 list-disc text-left text-sm">
+        {data.expenses?.map((e: any, i: number) => (
+          <li key={i}>
+            <b>{e.payer[0].toUpperCase() + e.payer.slice(1)}</b> paid <span className="text-blue-900">${e.amount}</span>
+            {e.description && <> for <span className="text-green-700">{e.description}</span></>}
+          </li>
+        ))}
+      </ul>
+      {data.settlements && data.settlements.length > 0 && (
+        <>
+          <div className="flex items-center gap-2">
+            <span className="text-indigo-700 text-lg">🤝</span>
+            <span className="font-semibold">Settlements:</span>
+          </div>
+          <ul className="pl-6 list-disc text-left text-sm">
+            {data.settlements.map((s: any, i: number) => (
+              <li key={i}><b>{s.from}</b> owes <b>{s.to}</b> <span className="text-blue-900">${s.amount}</span></li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
+function renderAssistantMessage(content: string) {
+  // Replace **bold** with <strong> and *italic* with <em>
+  // Remove markdown lists, headings, and code blocks
+  let lines = content
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/^\s*[-+*] /gm, '') // remove list markers
+    .replace(/^#+\s?/gm, '') // remove headings
+    .replace(/`{1,3}[^`]+`{1,3}/g, '') // remove inline code
+    .replace(/\n{2,}/g, '\n') // collapse multiple newlines
+    .split('\n');
+  return lines.map((line, i) => (
+    <p key={i} className="mb-2 last:mb-0" dangerouslySetInnerHTML={{ __html: line.trim() }} />
+  ));
+}
+
+const MessageBubble = ({ message }: { message: {role: 'user' | 'assistant', content: string} }) => {
+  return (
+    <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
+      <div className={`max-w-[80%] px-4 py-3 mb-2 rounded-2xl shadow-sm text-base leading-relaxed break-words transition-all
+        ${message.role === 'user'
+          ? 'bg-blue-600 text-white rounded-br-2xl rounded-tl-2xl rounded-bl-md'
+          : 'bg-white text-gray-900 border border-blue-100 rounded-bl-2xl rounded-tr-2xl rounded-br-md'}
+      `}>
+        {message.role === 'assistant' ? (
+          <div className="prose prose-sm max-w-none text-gray-900">
+            {renderAssistantMessage(message.content)}
+          </div>
+        ) : (
+          <p>{message.content}</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CURRENCY_OPTIONS = [
+  { code: 'USD', label: 'USD ($)' },
+  { code: 'LKR', label: 'LKR (₨)' },
+  { code: 'INR', label: 'INR (₹)' },
+  { code: 'EUR', label: 'EUR (€)' },
+  { code: 'GBP', label: 'GBP (£)' },
+  { code: 'AUD', label: 'AUD (A$)' },
+  { code: 'CAD', label: 'CAD (C$)' },
+  // Add more as needed
+];
+
+function getInitialCurrency() {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('chatsplit_currency');
+    if (saved) return saved;
+  }
+  return '';
+}
+
+export default function ChatPage() {
+  const [messages, setMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [input, setInput] = useState('');
+  const [currency, setCurrency] = useState(getInitialCurrency());
+  const [showCurrencyPrompt, setShowCurrencyPrompt] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!currency) setShowCurrencyPrompt(true);
+    else setShowCurrencyPrompt(false);
+  }, [currency]);
+
+  useEffect(() => {
+    chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, isLoading]);
+
+  // Save currency to localStorage
+  useEffect(() => {
+    if (currency) localStorage.setItem('chatsplit_currency', currency);
+  }, [currency]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading || !currency) return;
+    const userMessage = input.trim();
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/chat-expense', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage, currency }),
+      });
+      const data = await response.json();
+      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, something went wrong. Please try again!' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-green-50 flex flex-col items-center font-sans">
+      {/* Header */}
+      <header className="w-full max-w-3xl mx-auto px-4 py-4 flex items-center justify-between border-b border-blue-100 mb-4">
+        <Link href="/" className="text-2xl font-extrabold text-blue-800 tracking-tight hover:underline focus:outline-none">ChatSplit</Link>
+        <nav className="flex gap-6 text-blue-700 font-medium text-base">
+          {/* Add nav links here if needed */}
+        </nav>
+      </header>
+      <div className="w-full max-w-2xl flex flex-col h-[90vh] bg-white/90 rounded-3xl shadow-xl border border-blue-100 overflow-hidden">
+        {/* Currency Prompt Modal */}
+        {showCurrencyPrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-xs w-full flex flex-col items-center gap-4 border border-blue-100">
+              <h2 className="text-lg font-bold text-blue-900">Select your currency</h2>
+              <select
+                className="border border-blue-200 rounded px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-gray-900 w-full"
+                value={currency}
+                onChange={e => setCurrency(e.target.value)}
+              >
+                <option value="" disabled>Select currency...</option>
+                {CURRENCY_OPTIONS.map(opt => (
+                  <option key={opt.code} value={opt.code}>{opt.label}</option>
+                ))}
+              </select>
+              <button
+                className="mt-2 px-5 py-2 rounded-full bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition disabled:opacity-50 w-full"
+                disabled={!currency}
+                onClick={() => setShowCurrencyPrompt(false)}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+        {/* Messages */}
+        <div ref={chatRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-2 bg-gradient-to-b from-blue-50 to-green-50">
+          {messages.length === 0 && (
+            <div className="text-center text-gray-500 mt-8">
+              <p className="mb-2">👋 Hi! I can help you with:</p>
+              <ul className="mt-2 text-sm">
+                <li>• Calculate group expense splits</li>
+                <li>• Track who owes whom</li>
+                <li>• Handle complex trip expenses</li>
+                <li>• Convert between currencies</li>
+              </ul>
+              <p className="mt-4 text-xs">Try: "I paid $50 for dinner for 4 people"</p>
+            </div>
+          )}
+          {messages.map((message, i) => (
+            <MessageBubble key={i} message={message} />
+          ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-white border border-blue-100 p-3 rounded-2xl shadow-sm">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        {/* Divider */}
+        <div className="h-[1px] bg-blue-100 w-full" />
+        {/* Input */}
+        <form onSubmit={handleSubmit} className="bg-white/95 px-4 py-3 flex items-center gap-2 sticky bottom-0 z-10 border-t border-blue-100">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Describe your expense..."
+            className="flex-1 p-3 rounded-full border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base bg-blue-50 text-gray-900 placeholder-gray-500 shadow-sm"
+            disabled={isLoading || !currency}
+            autoFocus
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim() || !currency}
+            className="px-5 py-2 rounded-full bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition disabled:opacity-50"
+          >
+            Send
+          </button>
+        </form>
+      </div>
+      {/* Footer - simple text links */}
+      <footer className="w-full max-w-3xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between border-t border-blue-100 mt-8 text-sm text-blue-700">
+        <span className="font-bold text-blue-800 mb-2 md:mb-0">ChatSplit</span>
+        <nav className="flex gap-6">
+          <a href="/chat" className="hover:underline transition">Open Chat</a>
+          <a href="#features" className="hover:underline transition">Features</a>
+          <a href="#usecases" className="hover:underline transition">Use Cases</a>
+          <a href="#" className="hover:underline transition">Contact</a>
+        </nav>
+      </footer>
+    </main>
+  );
+}
+
+// Add fade-in animation
+if (typeof window !== 'undefined') {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .animate-fade-in {
+      animation: fadeIn 0.4s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: none; }
+    }
+  `;
+  if (!document.head.querySelector('style[data-chat-anim]')) {
+    style.setAttribute('data-chat-anim', 'true');
+    document.head.appendChild(style);
+  }
+} 

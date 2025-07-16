@@ -1,103 +1,171 @@
-import Image from "next/image";
+import Link from "next/link";
+import DemoChat from "../components/DemoChat";
 
-export default function Home() {
+export default function LandingDraft() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <main className="min-h-screen bg-white flex flex-col items-center font-sans">
+      {/* Hero Section */}
+      <div className="w-full bg-gradient-to-br from-blue-600 to-purple-700 text-white py-20">
+        <div className="max-w-4xl mx-auto text-center px-6">
+          <h1 className="text-5xl font-bold mb-4">
+            Finally, Split Trip Expenses <span className="text-yellow-300">Without the Drama</span>
+          </h1>
+          <p className="text-xl mb-8 text-white/90">
+            Just tell our AI what you spent. Get instant, clear splits.
+          </p>
+          <Link href="/chat">
+            <button className="bg-yellow-400 text-black px-8 py-4 rounded-lg text-lg font-semibold hover:bg-yellow-300 transition-colors">
+              Try It Now - It's Free! 🚀
+            </button>
+          </Link>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </div>
+
+      {/* Problem Section - Visual Cards */}
+      <div className="py-16 bg-gray-50 w-full">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">We've All Been There...</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow-md text-center">
+              <div className="text-4xl mb-4">💸</div>
+              <h3 className="font-bold mb-2 text-blue-900">Cash Chaos</h3>
+              <p className="text-gray-700">Everyone pays different amounts, no digital receipts</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md text-center">
+              <div className="text-4xl mb-4">🧮</div>
+              <h3 className="font-bold mb-2 text-blue-900">Mental Math Hell</h3>
+              <p className="text-gray-700">"Who owes what?" becomes a 30-minute calculation</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md text-center">
+              <div className="text-4xl mb-4">😤</div>
+              <h3 className="font-bold mb-2 text-blue-900">Awkward Arguments</h3>
+              <p className="text-gray-700">Spreadsheets and apps feel like overkill for simple trips</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Solution Demo - Real Demo Chat */}
+      <div className="py-16 w-full bg-white">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">See It In Action</h2>
+          <div className="flex justify-center">
+            <div className="w-full max-w-2xl">
+              <DemoChat />
+            </div>
+          </div>
+          <div className="text-center mt-8">
+            <Link href="/chat">
+              <button className="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600">
+                Try the Real Thing →
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Benefits - Icon + Short Text */}
+      <div className="py-16 bg-blue-50 w-full">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">Why ChatSplit?</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="flex items-start space-x-4">
+              <div className="text-3xl">⚡</div>
+              <div>
+                <h3 className="font-bold mb-2 text-blue-900">Instant Clarity</h3>
+                <p className="text-gray-700">No more "Wait, how much do I owe again?"</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-4">
+              <div className="text-3xl">🧠</div>
+              <div>
+                <h3 className="font-bold mb-2 text-blue-900">Zero Mental Load</h3>
+                <p className="text-gray-700">Just tell the AI and forget about it</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-4">
+              <div className="text-3xl">🤝</div>
+              <div>
+                <h3 className="font-bold mb-2 text-blue-900">Prevents Arguments</h3>
+                <p className="text-gray-700">Clear math that everyone can see</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-4">
+              <div className="text-3xl">📱</div>
+              <div>
+                <h3 className="font-bold mb-2 text-blue-900">Works on Your Phone</h3>
+                <p className="text-gray-700">Add expenses immediately while you're out</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Social Proof - Testimonial Cards */}
+      <div className="py-16 w-full">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">Loved by Sri Lankan Travelers</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-white border-2 border-green-200 p-6 rounded-lg">
+              <div className="flex mb-4">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">A</div>
+                <div className="ml-3">
+                  <div className="font-semibold text-blue-900">Amara</div>
+                  <div className="text-sm text-gray-600">Galle Trip</div>
+                </div>
+              </div>
+              <p className="text-gray-700">"Split our beach trip in seconds! No more Excel headaches."</p>
+            </div>
+            <div className="bg-white border-2 border-blue-200 p-6 rounded-lg">
+              <div className="flex mb-4">
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">R</div>
+                <div className="ml-3">
+                  <div className="font-semibold text-blue-900">Ravindu</div>
+                  <div className="text-sm text-gray-600">Uni Batch Trip</div>
+                </div>
+              </div>
+              <p className="text-gray-700">"Perfect for our Kandy trip. Everyone knew exactly what they owed."</p>
+            </div>
+            <div className="bg-white border-2 border-purple-200 p-6 rounded-lg">
+              <div className="flex mb-4">
+                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">S</div>
+                <div className="ml-3">
+                  <div className="font-semibold text-blue-900">Sachini</div>
+                  <div className="text-sm text-gray-600">Family Trip</div>
+                </div>
+              </div>
+              <p className="text-gray-700">"No more awkward money conversations at family gatherings!"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Final CTA - Urgent */}
+      <div className="py-20 bg-gradient-to-r from-green-600 to-blue-600 text-white w-full">
+        <div className="max-w-4xl mx-auto text-center px-6">
+          <h2 className="text-4xl font-bold mb-4">Ready to End Expense Drama?</h2>
+          <p className="text-xl mb-8 text-white/90">
+            Test it with your last trip. See how easy it could have been.
+          </p>
+          <Link href="/chat">
+            <button className="bg-yellow-400 text-black px-10 py-4 rounded-lg text-xl font-bold hover:bg-yellow-300 transition-colors">
+              Try ChatSplit Now - Free! 🚀
+            </button>
+          </Link>
+          <p className="text-sm mt-4 text-white/80">No signup required • Works on any device</p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="w-full max-w-3xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between border-t border-blue-100 mt-8 text-sm text-blue-700">
+        <Link href="/landing-draft" className="font-bold text-blue-800 mb-2 md:mb-0 hover:underline">ChatSplit</Link>
+        <nav className="flex gap-6">
+          <Link href="/chat" className="hover:underline transition">Open Chat</Link>
+          <a href="#benefits" className="hover:underline transition">Benefits</a>
+          <a href="#usecases" className="hover:underline transition">Use Cases</a>
+          <a href="#" className="hover:underline transition">Contact</a>
+        </nav>
       </footer>
-    </div>
+    </main>
   );
 }
