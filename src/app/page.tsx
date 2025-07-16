@@ -24,7 +24,7 @@ export default function LandingDraft() {
       {/* Problem Section - Visual Cards */}
       <div className="py-16 bg-gray-50 w-full">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">We&apos;ve All Been There...</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-blue-900">We&#39;ve All Been There...</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
               <div className="text-4xl mb-4">💸</div>
