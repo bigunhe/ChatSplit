@@ -12,10 +12,7 @@ import Link from 'next/link';
 // };
 
 // --- Helpers ---
-function formatTime(ts: number) {
-  const d = new Date(ts);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-} // Unused, can be removed
+// Remove unused: function formatTime(ts: number) { ... }
 
 // --- Smarter Expense Parsing ---
 function smartParseExpenses(input: string) {
@@ -24,7 +21,7 @@ function smartParseExpenses(input: string) {
   let totalBill: number | null = null;
   const payments: Array<{ person: string, amount: number, forPeople?: string[], calculated?: boolean }> = [];
   const peopleSet = new Set<string>();
-  const restAmount: number | null = null; // Was unused, now const
+  // Remove unused: const restAmount: number | null = null;
 
   // 1. Find total bill
   const totalBillMatch = text.match(/(total bill|bill total|total amount|all together|total is|total)\s*\$?(\d+(?:\.\d{1,2})?)/);
@@ -84,40 +81,7 @@ function smartParseExpenses(input: string) {
   };
 }
 
-function AIResponse({ parsed, rawInput }: { parsed: ReturnType<typeof smartParseExpenses>, rawInput: string }) {
-  if (!parsed.totalBill || parsed.payments.length === 0) {
-    // fallback to old logic or friendly error
-    return <span>🤔 I couldn't quite figure out the group split from: <b>{rawInput}</b>. Try something like "540 total bill for lunch. I paid 120. Sam paid 250 for him and Sarah. Tim paid the rest."</span>;
-  }
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <span className="text-green-600 text-lg">🍽️</span>
-        <span className="font-semibold">Total bill: <span className="text-blue-700">${parsed.totalBill}</span></span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-blue-700 text-lg">💸</span>
-        <span className="font-semibold">Payments:</span>
-      </div>
-      <ul className="pl-6 list-disc text-left text-sm">
-        {parsed.payments.map((p, i) => (
-          <li key={i}>
-            <b>{p.person[0].toUpperCase() + p.person.slice(1)}</b> paid <span className="text-blue-900">${p.amount}</span>
-            {p.forPeople && p.forPeople.length > 0 && (
-              <> for <span className="text-green-700">{p.forPeople.join(', ')}</span></>
-            )}
-            {p.calculated && <span className="text-xs text-gray-500"> (calculated as the rest)</span>}
-          </li>
-        ))}
-      </ul>
-      <div className="flex items-center gap-2">
-        <span className="text-indigo-700 text-lg">👥</span>
-        <span><b>People involved:</b> {parsed.people.map(p => p[0].toUpperCase() + p.slice(1)).join(', ')}</span>
-      </div>
-      <div className="text-sm text-gray-500 pt-2">Let me know if you want to see who owes whom, or add more details!</div>
-    </div>
-  );
-}
+// Remove unused: function AIResponse({ parsed, rawInput }: { parsed: ReturnType<typeof smartParseExpenses>, rawInput: string }) { ... }
 
 // --- Enhanced AI & Parsing ---
 // Removed unused: const GREETINGS = [ ... ];
@@ -132,22 +96,7 @@ function AIResponse({ parsed, rawInput }: { parsed: ReturnType<typeof smartParse
 // Removed unused: function getRandom(arr: string[]) { ... };
 // Remove all unused variables: AIResponse, GREETINGS, COMPLAINTS, CONFUSION, NONSENSE, THANKS, EXAMPLES, isLikelyExpense, isPartialExpense, isQuestion, getRandom, GeminiExpenseResult
 // Add new function to call OpenAI API route
-async function callOpenAIExpenseAPI(input: string) {
-  try {
-    const response = await fetch('/api/parse-expenses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input })
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'API error');
-    }
-    return await response.json();
-  } catch (e: unknown) {
-    return { error: (e as Error).message || 'Unknown error' };
-  }
-}
+// Remove unused: async function callOpenAIExpenseAPI(input: string) { ... }
 
 function renderAssistantMessage(content: string) {
   // Replace **bold** with <strong> and *italic* with <em>
@@ -294,7 +243,7 @@ export default function ChatPage() {
                 <li>• Handle complex trip expenses</li>
                 <li>• Convert between currencies</li>
               </ul>
-              <p className="mt-4 text-xs">Try: "I paid $50 for dinner for 4 people"</p>
+              <p className="mt-4 text-xs">Try: &quot;I paid $50 for dinner for 4 people&quot;</p>
             </div>
           )}
           {messages.map((message, i) => (
