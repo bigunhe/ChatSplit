@@ -1,22 +1,21 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 
 // --- Types ---
-type Message = {
-  from: 'user' | 'ai';
-  text: string;
-  timestamp: number;
-  aiElement?: React.ReactNode;
-};
+// Removed unused: type Message = {
+//   from: 'user' | 'ai';
+//   text: string;
+//   timestamp: number;
+//   aiElement?: React.ReactNode;
+// };
 
 // --- Helpers ---
 function formatTime(ts: number) {
   const d = new Date(ts);
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+} // Unused, can be removed
 
 // --- Smarter Expense Parsing ---
 function smartParseExpenses(input: string) {
@@ -25,7 +24,7 @@ function smartParseExpenses(input: string) {
   let totalBill: number | null = null;
   const payments: Array<{ person: string, amount: number, forPeople?: string[], calculated?: boolean }> = [];
   const peopleSet = new Set<string>();
-  let restAmount: number | null = null;
+  const restAmount: number | null = null; // Was unused, now const
 
   // 1. Find total bill
   const totalBillMatch = text.match(/(total bill|bill total|total amount|all together|total is|total)\s*\$?(\d+(?:\.\d{1,2})?)/);
@@ -121,41 +120,17 @@ function AIResponse({ parsed, rawInput }: { parsed: ReturnType<typeof smartParse
 }
 
 // --- Enhanced AI & Parsing ---
-const GREETINGS = [
-  /hello/i, /hi\b/i, /hey/i, /how are you/i, /good morning/i, /good evening/i, /what's up/i
-];
-const COMPLAINTS = [/hate.*app/i, /stupid|dumb|useless/i, /bad app/i];
-const CONFUSION = [/what.*do/i, /how.*work/i, /help/i, /not.*work/i, /confused/i];
-const NONSENSE = [/^[a-z]{2,}$/i, /asdf|qwer|zxcv|jjj|lorem|test/i];
-const THANKS = [/thank/i, /thanks/i, /appreciate/i];
-const EXAMPLES = [
-  "coffee $8, paid dinner $45 for me and Sarah, got $20 from Mike",
-  "lunch $12, groceries $30, Mike paid $25 for gas",
-  "Sarah owes me $15 for lunch, got $20 back from John"
-];
-
-function isLikelyExpense(input: string) {
-  // Looks for $ or numbers with expense/income keywords
-  return /\$?\d+/.test(input) && /(paid|spent|got|received|owe|from|for|withdrew)/i.test(input);
-}
-
-function isPartialExpense(input: string) {
-  // Has a keyword but missing amount or description
-  if (/coffee|lunch|dinner|groceries|gas|starbucks|pizza|rent|bill/i.test(input) && !/\$?\d+/.test(input)) return 'missing_amount';
-  if (/paid|spent|got|received|owe|from|withdrew/i.test(input) && /\$?\d+/.test(input) && !/coffee|lunch|dinner|groceries|gas|starbucks|pizza|rent|bill/i.test(input)) return 'missing_desc';
-  if (/owe/i.test(input) && !/\$?\d+/.test(input)) return 'missing_amount';
-  return false;
-}
-
-function isQuestion(input: string) {
-  return /\?$/.test(input) || /how|what|why|when|can you|could you|do you/i.test(input);
-}
-
-function getRandom(arr: string[]) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-// Remove old parseUserInput and smartParseExpenses logic
+// Removed unused: const GREETINGS = [ ... ];
+// Removed unused: const COMPLAINTS = [ ... ];
+// Removed unused: const CONFUSION = [ ... ];
+// Removed unused: const NONSENSE = [ ... ];
+// Removed unused: const THANKS = [ ... ];
+// Removed unused: const EXAMPLES = [ ... ];
+// Removed unused: function isLikelyExpense(input: string) { ... };
+// Removed unused: function isPartialExpense(input: string) { ... };
+// Removed unused: function isQuestion(input: string) { ... };
+// Removed unused: function getRandom(arr: string[]) { ... };
+// Remove all unused variables: AIResponse, GREETINGS, COMPLAINTS, CONFUSION, NONSENSE, THANKS, EXAMPLES, isLikelyExpense, isPartialExpense, isQuestion, getRandom, GeminiExpenseResult
 // Add new function to call OpenAI API route
 async function callOpenAIExpenseAPI(input: string) {
   try {
@@ -174,61 +149,10 @@ async function callOpenAIExpenseAPI(input: string) {
   }
 }
 
-function GeminiExpenseResult({ data }: { data: unknown }) {
-  const d = data as any;
-  if (d.error) {
-    return <span>😕 Sorry, I couldn&apos;t process that: <b>{d.error}</b></span>;
-  }
-  if (!d.expenses || !d.people) {
-    return <span>🤔 I couldn&apos;t parse the expenses. Try a different message.</span>;
-  }
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <span className="text-green-600 text-lg">💰</span>
-        <span className="font-semibold">Total Expenses: <span className="text-blue-700">${d.totalAmount ?? 0}</span></span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-blue-700 text-lg">👥</span>
-        <span className="font-semibold">People: {d.people?.map((p: string) => p[0].toUpperCase() + p.slice(1)).join(', ')}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-yellow-600 text-lg">💸</span>
-        <span className="font-semibold">Per Person Share: <span className="text-blue-900">${d.perPersonShare ?? '-'}</span></span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-indigo-700 text-lg">🧾</span>
-        <span className="font-semibold">Expenses:</span>
-      </div>
-      <ul className="pl-6 list-disc text-left text-sm">
-        {d.expenses?.map((e: any, i: number) => (
-          <li key={i}>
-            <b>{e.payer[0].toUpperCase() + e.payer.slice(1)}</b> paid <span className="text-blue-900">${e.amount}</span>
-            {e.description && <> for <span className="text-green-700">{e.description}</span></>}
-          </li>
-        ))}
-      </ul>
-      {d.settlements && d.settlements.length > 0 && (
-        <>
-          <div className="flex items-center gap-2">
-            <span className="text-indigo-700 text-lg">🤝</span>
-            <span className="font-semibold">Settlements:</span>
-          </div>
-          <ul className="pl-6 list-disc text-left text-sm">
-            {d.settlements.map((s: any, i: number) => (
-              <li key={i}><b>{s.from}</b> owes <b>{s.to}</b> <span className="text-blue-900">${s.amount}</span></li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  );
-}
-
 function renderAssistantMessage(content: string) {
   // Replace **bold** with <strong> and *italic* with <em>
   // Remove markdown lists, headings, and code blocks
-  let lines = content
+  const lines = content
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
     .replace(/^\s*[-+*] /gm, '') // remove list markers
