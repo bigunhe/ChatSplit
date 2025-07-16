@@ -15,7 +15,7 @@ export default function LandingDraft() {
           </p>
           <Link href="/chat">
             <button className="bg-yellow-400 text-black px-8 py-4 rounded-lg text-lg font-semibold hover:bg-yellow-300 transition-colors">
-              Try It Now - It's Free! 🚀
+              Try It Now - It&#39;s Free! 🚀
             </button>
           </Link>
         </div>
